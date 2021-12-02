@@ -328,6 +328,30 @@ class InferenceSession {
                             const OrtValueCachePtr& cache);
 #endif
 
+  void TurnOnCapture() {
+    for  (const auto& provider : session_state_->GetExecutionProviders()) {
+      if (provider->Type() == kCudaExecutionProvider) {
+        provider->TurnOnCapture();
+      }
+    }
+  }
+
+  void TurnOffCapture() {
+    for  (const auto& provider : session_state_->GetExecutionProviders()) {
+      if (provider->Type() == kCudaExecutionProvider) {
+        provider->TurnOffCapture();
+      }
+    }
+  }
+
+  void Replay() {
+    for  (const auto& provider : session_state_->GetExecutionProviders()) {
+      if (provider->Type() == kCudaExecutionProvider) {
+        provider->Replay();
+      }
+    }
+  }
+
   /**
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.
     * @note lifetime of the returned pointer is valid as long as the Session object is live.

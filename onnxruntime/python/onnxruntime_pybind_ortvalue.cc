@@ -71,7 +71,20 @@ void addOrtValueMethods(pybind11::module& m) {
 
         return ml_value;
       })
-
+#if USE_CUDA
+      .def("update_inplace", [](OrtValue* ml_value, const py::array& py_values) {
+        // PyArrayObject* arr = reinterpret_cast<PyArrayObject*>(array_on_cpu.ptr());
+        // PyArrayObject* darray = PyArray_GETCONTIGUOUS(arr);
+        // ORT_ENFORCE(darray != nullptr, "The object must be a contiguous array for input.");
+        // const int npy_type = PyArray_TYPE(darray);
+        // py::array* py_array = reinterpret_cast<py::array*>(darray);
+        // TensorShape shape = GetArrayShape(darray);
+        // auto element_type = NumpyToOnnxRuntimeTensorType(npy_type);
+        auto values_type = GetNumpyArrayType(py_values);
+        std::cout << "++++++ OrtValue update_inplace address: " << ml_value->GetMutable<Tensor>()->DataRaw() << std::endl;
+        onnxruntime::python::CopyDataToTensor(py_values, values_type,  *(ml_value->GetMutable<Tensor>()), CpuToCudaMemCpy);
+      })
+#endif
       // Factory method to create an OrtValue (Tensor) from the given shape and element type with memory on the specified device
       // The memory is left uninitialized
       .def_static("ortvalue_from_shape_and_type", [](const std::vector<int64_t>& shape, py::object& element_type, const OrtDevice& device) {

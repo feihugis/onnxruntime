@@ -127,6 +127,17 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                                    std::vector<OrtValue>& fetches,
                                    const std::unordered_map<size_t, CustomAllocator>& fetch_allocators,
                                    const logging::Logger& logger) {
+  
+  for(const auto& feed : feeds) {
+    std::cout << "++++++ feed tensor address: " << feed.Get<onnxruntime::Tensor>().DataRaw() << std::endl;
+  }
+
+  for (auto& provider : session_state.GetExecutionProviders()) {
+    if (provider->IsCapturing()) {
+      provider->CaptureBegin();
+    }
+  }
+
   const bool is_profiler_enabled = session_state.Profiler().IsEnabled();
   TimePoint tp;
   TimePoint sync_time_begin;
@@ -190,7 +201,6 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
     size_t program_counter = 0;
     utils::NodeDumpContext dump_context { session_state.GetGraphExecutionCounter(), program_counter };
 #endif
-
 
   for (const auto& node_exec_plan : exec_plan_vec) {
     if (terminate_flag_) {
@@ -453,6 +463,10 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   VLOGS(logger, 1) << "Fetching output.";
   // ExecutionFrame::Finalize will update 'fetches' with the final output
   ORT_RETURN_IF_ERROR(frame.GetOutputs(fetches));
+  for(const auto& fetch : fetches) {
+    std::cout << "++++++ fetch tensor address: " << fetch.Get<onnxruntime::Tensor>().DataRaw() << std::endl;
+  }
+
   VLOGS(logger, 1) << "Done with execution.";
 
 #if !defined(ORT_MINIMAL_BUILD) && defined(ORT_MEMORY_PROFILE)
@@ -495,6 +509,12 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                        << i.second << " bytes for " << i.first << std::endl;
   }
 #endif
+
+  for (auto& provider : session_state.GetExecutionProviders()) {
+    if (provider->IsCapturing()) {
+      provider->CaptureEnd();
+    }
+  }
 
   return Status::OK();
 }

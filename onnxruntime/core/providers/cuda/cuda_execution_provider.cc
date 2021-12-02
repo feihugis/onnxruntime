@@ -177,12 +177,17 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     }
   }
 
+  graph_ = CUDAGraph(stream_);
+
   size_t free = 0;
   size_t total = 0;
   CUDA_CALL_THROW(cudaMemGetInfo(&free, &total));
+
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
+  graph_.Reset();
+  cudaDeviceSynchronize();
   auto cpu_alloc = GetAllocator(DEFAULT_CPU_ALLOCATOR_DEVICE_ID, OrtMemTypeCPU);
   {
     std::lock_guard<OrtMutex> lock(deferred_release_cpu_ptr_mutex_);
@@ -190,7 +195,7 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
     while (it != deferred_release_cpu_ptr_.end()) {
       auto& e = it->first;
       auto& v = it->second;
-      if (v.recorded)
+      if (v.recorded && !v.cpu_ptrs.empty())
         CUDA_CALL_THROW(cudaEventSynchronize(e));
       for (auto p : v.cpu_ptrs) {
         cpu_alloc->Free(p);
@@ -330,10 +335,51 @@ Status CUDAExecutionProvider::OnRunStart() {
   auto& current_deferred_release_event = GetPerThreadContext().GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event, cudaEventDisableTiming));
   deferred_release_cpu_ptr_.emplace(current_deferred_release_event, DeferredReleaseCPUPtrs());
+
+  // if (graph_.IsCapturing()) {
+  //   graph_.CaptureBegin();
+  // }
   return Status::OK();
 }
 
+void CUDAExecutionProvider::CaptureBegin()  {
+  cudaDeviceSynchronize();
+
+  graph_.CaptureBegin();
+}
+
+void CUDAExecutionProvider::CaptureEnd() {
+  graph_.CaptureEnd();
+}
+
+void CUDAExecutionProvider::Replay() {
+  graph_.Replay();
+}
+
+void CUDAExecutionProvider::TurnOnCapture() {
+  graph_.TurnOnCapture();
+}
+
+void CUDAExecutionProvider::TurnOffCapture() {
+  graph_.TurnOffCapture();
+}
+
+bool CUDAExecutionProvider::IsCapturing() const {
+  return graph_.IsCapturing();
+}
+
+bool CUDAExecutionProvider::HasGraphExec() const {
+  return graph_.HasGraphExec();
+}
+
 Status CUDAExecutionProvider::OnRunEnd(bool sync_stream) {
+  // if (graph_.IsCapturing()) {
+  //   graph_.CaptureEnd();
+  //   for (int i = 0 ; i < 10; ++i) {
+  //     graph_.Replay();
+  //   }
+  //   // return Status::OK();
+  // }
   // record deferred release event on default stream, and release per_thread_context
   auto current_deferred_release_event = GetPerThreadContext().GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, static_cast<cudaStream_t>(GetComputeStream())));

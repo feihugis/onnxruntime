@@ -240,7 +240,6 @@ common::Status SaveInitializedTensors(
       ORT_RETURN_IF_ERROR(planner.GetPreallocatedBuffer(ort_value_index, name, m, alloc));
       bool use_device_allocator_for_initializers =
           session_options.config_options.GetConfigOrDefault(kOrtSessionOptionsUseDeviceAllocatorForInitializers, "0") == "1";
-
       Status st = DeserializeTensorProto(env, graph_loc, tensor_proto, m.get(), alloc, default_cpu_alloc, ort_value,
                                          data_transfer_mgr, use_device_allocator_for_initializers);
       if (!st.IsOK()) {
@@ -361,7 +360,7 @@ common::Status SaveInputOutputNamesToNodeMapping(const onnxruntime::GraphViewer&
   // It's possible (although assumably rare) for a graph to have inputs that aren't used. one reasonable occurrence
   // is in the Loop subgraph where the value of the condition used to decide whether to continue looping is passed in.
   // The condition evaluated to 'true' given the subgraph is being executed, so it's of dubious value as an input.
-  // Similar is the current iteration number which may or may not be needed by the Loop subgraph.
+  // Similar is the current iteration numb``er which may or may not be needed by the Loop subgraph.
   // In order to handle those, create a dummy entry in the input name to node info mapping so that
   // utils::CopyOneInputAcrossDevices is happy.
 
