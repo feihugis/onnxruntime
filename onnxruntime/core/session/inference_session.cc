@@ -1783,8 +1783,6 @@ Status InferenceSession::Run(const RunOptions& run_options,
 
     FeedsFetchesInfo info(feed_names, output_names, session_state_->GetOrtValueNameIdxMap());
     FeedsFetchesManager feeds_fetches_manager{std::move(info)};
-    // ORT_RETURN_IF_ERROR(onnxruntime::utils::InitializeFeedFetchCopyInfo(this->GetSessionState(), feeds_fetches_manager));
-    // feeds_fetches_manager.SetDeviceCopyChecks(DeviceCopyCheck::NoCopy, DeviceCopyCheck::NoCopy);
 
 
     if (p_fetches_device_info) {

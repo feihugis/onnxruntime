@@ -270,7 +270,8 @@ class Session:
                 output_dict[n] = v._get_c_value()
 
             sess.run_with_feeds_fetches_ort_values(input_dict, output_dict, run_options)
-            return output_dict_ort_values
+            ort_values = [v for n, v in output_dict_ort_values.items()]
+            return ort_values
 
         num_required_inputs = len(self._inputs_meta)
         num_inputs = len(input_dict_ort_values)
@@ -294,7 +295,25 @@ class Session:
                 return invoke(self._sess, input_dict_ort_values, output_dict_ort_values, run_options)
             else:
                 raise
-
+    
+    def turn_on_capture(self):
+        """
+        Turn on capture of the cuda graph.
+        """
+        self._sess.turn_on_capture()
+        
+    def turn_off_capture(self):
+        """
+        Turn off capture of the cuda graph.
+        """
+        self._sess.turn_off_capture()
+    
+    def replay(self):
+        """
+        Replay the cuda graph.
+        """
+        self._sess.replay()
+        
     def end_profiling(self):
         """
         End profiling and return results in a file.
@@ -678,6 +697,12 @@ class OrtValue:
         Use accessors to gain a reference to non-Tensor objects such as SparseTensor
         '''
         return self._ortvalue.numpy()
+    
+    def update_inplace(self, np_arr):
+        '''
+        Update the cuda OrtValue in place with a new Numpy array.
+        '''
+        self._ortvalue.update_inplace(np_arr)
 
 
 class OrtDevice:

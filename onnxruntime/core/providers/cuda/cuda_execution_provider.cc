@@ -373,13 +373,6 @@ bool CUDAExecutionProvider::HasGraphExec() const {
 }
 
 Status CUDAExecutionProvider::OnRunEnd(bool sync_stream) {
-  // if (graph_.IsCapturing()) {
-  //   graph_.CaptureEnd();
-  //   for (int i = 0 ; i < 10; ++i) {
-  //     graph_.Replay();
-  //   }
-  //   // return Status::OK();
-  // }
   // record deferred release event on default stream, and release per_thread_context
   auto current_deferred_release_event = GetPerThreadContext().GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventRecord(current_deferred_release_event, static_cast<cudaStream_t>(GetComputeStream())));

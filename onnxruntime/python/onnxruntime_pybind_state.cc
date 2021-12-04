@@ -1410,7 +1410,6 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         for (const auto item : feeds) {
           auto name = item.first.cast<std::string>();
           const OrtValue* ort_value = item.second.cast<const OrtValue*>();
-          std::cout << "py feed tensor address: " << ort_value->Get<Tensor>().DataRaw() << std::endl;
           ort_feeds.emplace(name, *ort_value);
         }
         std::vector<std::string> output_names;
@@ -1418,7 +1417,6 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         for (const auto item : fetches) {
           auto name = item.first.cast<std::string>();
           const OrtValue* ort_value = item.second.cast<const OrtValue*>();
-          std::cout << "py fetch tensor address: " << ort_value->Get<Tensor>().DataRaw() << std::endl;
           output_names.push_back(name);
           fetch_ort_values.push_back(*ort_value);
         }
@@ -1426,15 +1424,6 @@ including arg name, arg type (contains both type and shape).)pbdoc")
         {
           // release GIL to allow multiple python threads to invoke Run() in parallel.
           py::gil_scoped_release release;
-          for (const auto& feed: ort_feeds) {
-            std::cout << "++++++ c++ feed " << feed.first << " tensor address: " << feed.second.Get<Tensor>().DataRaw() << std::endl; 
-          }
-
-          for (const auto& fetch : fetch_ort_values) {
-            std::cout << "++++++ c++ fetch tensor address: " << fetch.Get<Tensor>().DataRaw() << std::endl; 
-          }
-
-
           if (run_options != nullptr) {
             OrtPybindThrowIfError(sess->GetSessionHandle()->Run(*run_options, ort_feeds, output_names, &fetch_ort_values));
           } else {

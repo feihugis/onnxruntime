@@ -127,11 +127,6 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
                                    std::vector<OrtValue>& fetches,
                                    const std::unordered_map<size_t, CustomAllocator>& fetch_allocators,
                                    const logging::Logger& logger) {
-  
-  for(const auto& feed : feeds) {
-    std::cout << "++++++ feed tensor address: " << feed.Get<onnxruntime::Tensor>().DataRaw() << std::endl;
-  }
-
   for (auto& provider : session_state.GetExecutionProviders()) {
     if (provider->IsCapturing()) {
       provider->CaptureBegin();
@@ -463,9 +458,6 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
   VLOGS(logger, 1) << "Fetching output.";
   // ExecutionFrame::Finalize will update 'fetches' with the final output
   ORT_RETURN_IF_ERROR(frame.GetOutputs(fetches));
-  for(const auto& fetch : fetches) {
-    std::cout << "++++++ fetch tensor address: " << fetch.Get<onnxruntime::Tensor>().DataRaw() << std::endl;
-  }
 
   VLOGS(logger, 1) << "Done with execution.";
 

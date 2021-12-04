@@ -54,12 +54,10 @@ void* CUDAAllocator::Alloc(size_t size) {
     //BFCArena was updated recently to handle the exception and adjust the request size
     CUDA_CALL_THROW(cudaMalloc((void**)&p, size));
   }
-  printf("++++ CUDAAllocator::Alloc: %p (%ld bytes) \n", p, size);
   return p;
 }
 
 void CUDAAllocator::Free(void* p) {
-  printf("---- CUDAAllocator::Free: %p \n", p);
   SetDevice(false);
   CheckDevice(false);  // ignore CUDA failure when free
   cudaFree(p);         // do not throw error since it's OK for cudaFree to fail during shutdown

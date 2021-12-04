@@ -11,13 +11,11 @@ CUDAGraph::CUDAGraph() {
 }
 
 void CUDAGraph::CaptureBegin() {
-  printf("++++++ CUDAGraph CaptureBegin ++++++ \n");
   cudaDeviceSynchronize();
   cudaStreamBeginCapture(capture_stream_, cudaStreamCaptureModeGlobal);
 }
 
 void CUDAGraph::CaptureEnd() {
-  printf("++++++ CUDAGraph CaptureEnd ++++++ \n");
   cudaStreamEndCapture(capture_stream_, &graph_);
   if (graph_ == NULL) {
     ORT_THROW("CUDAGraph::CaptureEnd: graph_ is NULL");
@@ -37,14 +35,11 @@ void CUDAGraph::CaptureEnd() {
 
 void CUDAGraph::Replay() {
   cudaDeviceSynchronize();
-  // printf("++++++ cudaDeviceSynchronize CUDAGraph Replay Begin ++++++ \n");
   cudaGraphLaunch(graph_exec_, capture_stream_);
   cudaDeviceSynchronize();
-  // printf("++++++ cudaDeviceSynchronize CUDAGraph Replay Finish ++++++ \n");
 }
 
 void CUDAGraph::Reset() {
-  printf("++++++ CUDAGraph Reset ++++++ \n");
   if (has_graph_) {
     cudaGraphDestroy(graph_);
     has_graph_ = false;
