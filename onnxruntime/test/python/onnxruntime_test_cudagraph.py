@@ -72,8 +72,40 @@ class TestInferenceSession(unittest.TestCase):
   #           shape = np.array([2,2], dtype=np.int64)
   #           for iteration in range(100000):
   #               result = session.run(output_names=['output'], input_feed={'shape': shape})
+  
+  def testRunModelWithCudaGraph(self):
+      providers = ["CUDAExecutionProvider"]
+      sess = onnxrt.InferenceSession(get_name("mul_1.onnx"), providers=providers)
+      x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+      y = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=np.float32)
+      x_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+      y_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(y, 'cuda', 0)
+      
+      feeds = {"X": x_ortvalue}
+      fetches = {"Y": y_ortvalue}
+      
+      for _ in range(20):
+        sess.run_with_feeds_fetches_ort_values(feeds, fetches)
+      
+      y_expected = np.array([[1.0, 4.0], [9.0, 16.0], [25.0, 36.0]], dtype=np.float32)
+      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
+      
+      
+      sess.turn_on_capture()      
+      sess.run_with_feeds_fetches_ort_values(feeds, fetches)
+      sess.turn_off_capture()
+      sess.replay()
+      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
+      
+      x = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
+      y_expected = np.array([[10.0, 40.0], [90.0, 160.0], [250.0, 360.0]], dtype=np.float32)
+      x_ortvalue.update_inplace(x)
+      sess.replay()
+      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
                 
-  def testCUDAGraphCapture(self):
+      
+                    
+  def a_testCUDAGraphCapture(self):
       print(f"PID: {os.getpid()} \n")
       
       # onnxrt.set_default_logger_severity(0)
@@ -91,7 +123,7 @@ class TestInferenceSession(unittest.TestCase):
       run_options = onnxrt.RunOptions()
       run_options.log_verbosity_level = 1
       
-     
+      
       
       src_tokens = np.array([[0,99,99,99,99,99,99,99,99,99,99,99,99,99,99,2]])
       prev_out_tokens = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,]])
