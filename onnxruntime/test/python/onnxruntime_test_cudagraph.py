@@ -72,7 +72,19 @@ class TestInferenceSession(unittest.TestCase):
   #           shape = np.array([2,2], dtype=np.int64)
   #           for iteration in range(100000):
   #               result = session.run(output_names=['output'], input_feed={'shape': shape})
-  
+  def testOrtValueUpdateInPlace(self):
+      x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+      ortvalue_cpu = onnxrt.OrtValue.ortvalue_from_numpy(x)
+      ortvalue_gpu = onnxrt.OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+      np.testing.assert_allclose(x, ortvalue_cpu.numpy())
+      np.testing.assert_allclose(x, ortvalue_gpu.numpy())
+      
+      x = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
+      ortvalue_cpu.update_inplace(x)
+      ortvalue_gpu.update_inplace(x)
+      np.testing.assert_allclose(x, ortvalue_cpu.numpy())
+      np.testing.assert_allclose(x, ortvalue_gpu.numpy())
+      
   def testRunModelWithCudaGraph(self):
       providers = ["CUDAExecutionProvider"]
       sess = onnxrt.InferenceSession(get_name("mul_1.onnx"), providers=providers)
