@@ -73,52 +73,54 @@ class TestInferenceSession(unittest.TestCase):
   #           for iteration in range(100000):
   #               result = session.run(output_names=['output'], input_feed={'shape': shape})
   def testOrtValueUpdateInPlace(self):
-      x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
-      ortvalue_cpu = onnxrt.OrtValue.ortvalue_from_numpy(x)
-      ortvalue_gpu = onnxrt.OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
-      np.testing.assert_allclose(x, ortvalue_cpu.numpy())
-      np.testing.assert_allclose(x, ortvalue_gpu.numpy())
+      x0 = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+      ortvalue_cpu = onnxrt.OrtValue.ortvalue_from_numpy(x0)
+      np.testing.assert_allclose(x0, ortvalue_cpu.numpy())
       
-      x = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
-      ortvalue_cpu.update_inplace(x)
-      ortvalue_gpu.update_inplace(x)
-      np.testing.assert_allclose(x, ortvalue_cpu.numpy())
-      np.testing.assert_allclose(x, ortvalue_gpu.numpy())
+      x1 = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
+      ortvalue_cpu.update_inplace(x1)
+      np.testing.assert_allclose(x1, ortvalue_cpu.numpy())
+      
+      
+      if 'CUDAExecutionProvider' in onnxrt.get_available_providers():
+          ortvalue_gpu = onnxrt.OrtValue.ortvalue_from_numpy(x0, 'cuda', 0)
+          np.testing.assert_allclose(x0, ortvalue_gpu.numpy())
+          
+          ortvalue_gpu.update_inplace(x1)
+          np.testing.assert_allclose(x1, ortvalue_gpu.numpy())
       
   def testRunModelWithCudaGraph(self):
-      providers = ["CUDAExecutionProvider"]
-      sess = onnxrt.InferenceSession(get_name("mul_1.onnx"), providers=providers)
-      x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
-      y = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=np.float32)
-      x_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
-      y_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(y, 'cuda', 0)
-      
-      feeds = {"X": x_ortvalue}
-      fetches = {"Y": y_ortvalue}
-      
-      for _ in range(20):
-        sess.run_with_feeds_fetches_ort_values(feeds, fetches)
-      
-      y_expected = np.array([[1.0, 4.0], [9.0, 16.0], [25.0, 36.0]], dtype=np.float32)
-      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
-      
-      
-      sess.turn_on_capture()      
-      sess.run_with_feeds_fetches_ort_values(feeds, fetches)
-      sess.turn_off_capture()
-      sess.replay()
-      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
-      
-      x = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
-      y_expected = np.array([[10.0, 40.0], [90.0, 160.0], [250.0, 360.0]], dtype=np.float32)
-      x_ortvalue.update_inplace(x)
-      sess.replay()
-      np.testing.assert_allclose(y_expected, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
-                
+      if 'CUDAExecutionProvider' in onnxrt.get_available_providers():
+          providers = ["CUDAExecutionProvider"]
+          sess = onnxrt.InferenceSession(get_name("matmul_1.onnx"), providers=providers)
+          x = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+          y = np.array([[0.0], [0.0], [0.0]], dtype=np.float32)
+          x_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(x, 'cuda', 0)
+          y_ortvalue = onnxrt.OrtValue.ortvalue_from_numpy(y, 'cuda', 0)
+          
+          feeds = {"X": x_ortvalue}
+          fetches = {"Y": y_ortvalue}
+          
+          for _ in range(1):
+            sess.run_with_feeds_fetches_ort_values(feeds, fetches)
+          
+          expected_y = np.array([[5.0], [11.0], [17.0]], dtype=np.float32)
+          np.testing.assert_allclose(expected_y, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
+          
+          sess.turn_on_capture()      
+          sess.run_with_feeds_fetches_ort_values(feeds, fetches)
+          sess.turn_off_capture()
+          sess.replay()
+          np.testing.assert_allclose(expected_y, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)
+          
+          x = np.array([[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float32)
+          expected_y = np.array([[50.0], [110.0], [170.0]], dtype=np.float32)
+          x_ortvalue.update_inplace(x)
+          sess.replay()
+          np.testing.assert_allclose(expected_y, fetches["Y"].numpy(), rtol=1e-05, atol=1e-05)  
       
                     
-  def a_testCUDAGraphCapture(self):
-      print(f"PID: {os.getpid()} \n")
+  def disable_testCUDAGraphCapture(self):
       
       # onnxrt.set_default_logger_severity(0)
       providers = [("CUDAExecutionProvider", {
@@ -194,11 +196,11 @@ class TestInferenceSession(unittest.TestCase):
       print(src_tokens_ortvalue.numpy())
       
       
-      REPEAT = 100
+      REPEAT = 1
       t0 = time.time()
       for _ in range(REPEAT):
-        src_tokens = np.array([[101, 2040, 102, 101, 2003, 102, 101, 3419, 102, 101, 8592, 102, 102, 0, 0, 0]])
-        src_tokens_ortvalue._ortvalue.update_inplace(src_tokens)
+        # src_tokens = np.array([[101, 2040, 102, 101, 2003, 102, 101, 3419, 102, 101, 8592, 102, 102, 0, 0, 0]])
+        # src_tokens_ortvalue._ortvalue.update_inplace(src_tokens)
         session._sess.replay();
       t1 = time.time()
       print(fetches['topk_probs'].numpy())

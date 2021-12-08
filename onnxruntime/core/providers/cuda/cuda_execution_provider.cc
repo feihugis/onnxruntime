@@ -177,7 +177,9 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
     }
   }
 
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 11000  
   graph_ = CUDAGraph(stream_);
+#endif
 
   size_t free = 0;
   size_t total = 0;
@@ -342,36 +344,6 @@ Status CUDAExecutionProvider::OnRunStart() {
   return Status::OK();
 }
 
-void CUDAExecutionProvider::CaptureBegin()  {
-  cudaDeviceSynchronize();
-
-  graph_.CaptureBegin();
-}
-
-void CUDAExecutionProvider::CaptureEnd() {
-  graph_.CaptureEnd();
-}
-
-void CUDAExecutionProvider::Replay() {
-  graph_.Replay();
-}
-
-void CUDAExecutionProvider::TurnOnCapture() {
-  graph_.TurnOnCapture();
-}
-
-void CUDAExecutionProvider::TurnOffCapture() {
-  graph_.TurnOffCapture();
-}
-
-bool CUDAExecutionProvider::IsCapturing() const {
-  return graph_.IsCapturing();
-}
-
-bool CUDAExecutionProvider::HasGraphExec() const {
-  return graph_.HasGraphExec();
-}
-
 Status CUDAExecutionProvider::OnRunEnd(bool sync_stream) {
   // record deferred release event on default stream, and release per_thread_context
   auto current_deferred_release_event = GetPerThreadContext().GetCurrentDeferredReleaseEvent();
@@ -397,6 +369,39 @@ Status CUDAExecutionProvider::SetComputeStream(void* stream) {
   }
   return Status::OK();
 }
+
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
+void CUDAExecutionProvider::CaptureBegin()  {
+  ORT_THROW_IF_ERROR(Sync());
+  graph_.CaptureBegin();
+}
+
+void CUDAExecutionProvider::CaptureEnd() {
+  graph_.CaptureEnd();
+}
+
+void CUDAExecutionProvider::Replay() {
+  ORT_THROW_IF_ERROR(OnRunStart());
+  graph_.Replay();
+  ORT_THROW_IF_ERROR(OnRunEnd(true));
+}
+
+void CUDAExecutionProvider::TurnOnCapture() {
+  graph_.TurnOnCapture();
+}
+
+void CUDAExecutionProvider::TurnOffCapture() {
+  graph_.TurnOffCapture();
+}
+
+bool CUDAExecutionProvider::IsCapturing() const {
+  return graph_.IsCapturing();
+}
+
+bool CUDAExecutionProvider::HasGraphExec() const {
+  return graph_.HasGraphExec();
+}
+#endif
 
 namespace cuda {
 // opset 1 to 9

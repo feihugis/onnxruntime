@@ -46,9 +46,9 @@ void CUDAGraph::CaptureEnd() {
 
 void CUDAGraph::Replay() {
 #if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
   CUDA_CALL_THROW(cudaGraphLaunch(graph_exec_, capture_stream_));
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 #else
   ORT_THROW("CUDA graphs can only be used in Onnxruntime built with CUDA >= 11.0");
 #endif

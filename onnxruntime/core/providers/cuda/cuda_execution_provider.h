@@ -95,6 +95,7 @@ class CUDAExecutionProvider : public IExecutionProvider {
 
   std::unique_ptr<profiling::EpProfiler> GetProfiler() override;
 
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
   void CaptureBegin() override;
   void CaptureEnd() override;
   void Replay() override;
@@ -102,14 +103,17 @@ class CUDAExecutionProvider : public IExecutionProvider {
   void TurnOffCapture() override;
   bool IsCapturing() const override;
   bool HasGraphExec() const override;
+#endif
 
  private:
   CUDAExecutionProviderInfo info_;
   cudaDeviceProp device_prop_;
   bool external_stream_ = false;
   cudaStream_t stream_ = nullptr;
-  CUDAGraph graph_ = NULL;
 
+#if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
+  CUDAGraph graph_ = NULL;
+#endif
   struct DeferredReleaseCPUPtrs {
     bool recorded = false;
     std::vector<void*> cpu_ptrs;
