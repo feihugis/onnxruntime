@@ -15,7 +15,6 @@ struct CUDAGraph {
   void Replay();
   void Reset();
   bool IsCapturing() const;
-  bool HasGraphExec() const;
   void TurnOnCapture();
   void TurnOffCapture();
 

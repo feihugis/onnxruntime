@@ -188,8 +188,6 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
-  graph_.Reset();
-  cudaDeviceSynchronize();
   auto cpu_alloc = GetAllocator(DEFAULT_CPU_ALLOCATOR_DEVICE_ID, OrtMemTypeCPU);
   {
     std::lock_guard<OrtMutex> lock(deferred_release_cpu_ptr_mutex_);
@@ -197,7 +195,7 @@ CUDAExecutionProvider::~CUDAExecutionProvider() {
     while (it != deferred_release_cpu_ptr_.end()) {
       auto& e = it->first;
       auto& v = it->second;
-      if (v.recorded && !v.cpu_ptrs.empty())
+      if (v.recorded)
         CUDA_CALL_THROW(cudaEventSynchronize(e));
       for (auto p : v.cpu_ptrs) {
         cpu_alloc->Free(p);
@@ -337,10 +335,6 @@ Status CUDAExecutionProvider::OnRunStart() {
   auto& current_deferred_release_event = GetPerThreadContext().GetCurrentDeferredReleaseEvent();
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&current_deferred_release_event, cudaEventDisableTiming));
   deferred_release_cpu_ptr_.emplace(current_deferred_release_event, DeferredReleaseCPUPtrs());
-
-  // if (graph_.IsCapturing()) {
-  //   graph_.CaptureBegin();
-  // }
   return Status::OK();
 }
 
@@ -396,10 +390,6 @@ void CUDAExecutionProvider::TurnOffCapture() {
 
 bool CUDAExecutionProvider::IsCapturing() const {
   return graph_.IsCapturing();
-}
-
-bool CUDAExecutionProvider::HasGraphExec() const {
-  return graph_.HasGraphExec();
 }
 #endif
 

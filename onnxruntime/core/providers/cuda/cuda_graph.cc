@@ -46,16 +46,13 @@ void CUDAGraph::CaptureEnd() {
 
 void CUDAGraph::Replay() {
 #if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
-  // cudaDeviceSynchronize();
   CUDA_CALL_THROW(cudaGraphLaunch(graph_exec_, capture_stream_));
-  // cudaDeviceSynchronize();
 #else
   ORT_THROW("CUDA graphs can only be used in Onnxruntime built with CUDA >= 11.0");
 #endif
 }
 
 void CUDAGraph::Reset() {
-  printf("+++Reset \n");
 #if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
   if (has_graph_) {
     CUDA_CALL_THROW(cudaGraphDestroy(graph_));
@@ -73,10 +70,6 @@ void CUDAGraph::Reset() {
 
 bool CUDAGraph::IsCapturing() const {
   return is_capturing_;
-}
-
-bool CUDAGraph::HasGraphExec() const {
-  return has_graph_exec_;
 }
 
 void CUDAGraph::TurnOnCapture() {

@@ -102,7 +102,6 @@ class CUDAExecutionProvider : public IExecutionProvider {
   void TurnOnCapture() override;
   void TurnOffCapture() override;
   bool IsCapturing() const override;
-  bool HasGraphExec() const override;
 #endif
 
  private:

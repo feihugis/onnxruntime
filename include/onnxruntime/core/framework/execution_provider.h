@@ -174,8 +174,6 @@ class IExecutionProvider {
 
   virtual bool IsCapturing() const { return false; }
 
-  virtual bool HasGraphExec() const { return false; }
-
   /**
      Called when session creation is complete
      This provides an opportunity for execution providers to optionally synchronize and

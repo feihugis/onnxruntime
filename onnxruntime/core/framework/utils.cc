@@ -574,63 +574,6 @@ static common::Status CopyOutputsAcrossDevices(const SessionState& session_state
   return Status::OK();
 }
 
-template <typename T>
-void DumpTensorToStdOut(const Tensor& tensor) {
-  const auto& shape = tensor.Shape();
-  auto num_items = shape.Size();
-
-  if (num_items == 0) {
-    std::cout << "no data";
-    return;
-  }
-
-  size_t num_dims = shape.NumDimensions();
-  size_t num_rows = 1;
-  if (num_dims > 1) {
-    num_rows = static_cast<size_t>(shape[0]);
-  }
-
-  size_t row_size = num_items / num_rows;
-
-  auto data = tensor.DataAsSpan<T>();
-
-  auto print_val = [](const T& value) {
-    if (std::is_floating_point<T>::value)
-      std::cout << std::setprecision(8) << value;
-    else
-      std::cout << value;
-  };
-
-  for (size_t row = 0; row < num_rows; ++row) {
-    print_val(data[row * row_size]);
-    for (size_t i = 1; i < row_size; ++i) {
-      std::cout << ", ";
-      print_val(data[row * row_size + i]);
-    }
-    std::cout << "\n";
-  }
-
-  std::cout << std::endl;
-}
-
-template <typename T>
-void DumpGPUTensor(const SessionState& session_state, const onnxruntime::Tensor& gpu_tensor) {
-      const auto& execution_providers = session_state.GetExecutionProviders();
-      const auto* cpu_execution_provider = execution_providers.Get(onnxruntime::kCpuExecutionProvider);
-      auto cpu_allocator = cpu_execution_provider->GetAllocator(0, OrtMemTypeDefault);
-      auto data_type = onnxruntime::DataTypeImpl::GetType<T>();
-      Tensor cpu_tensor{data_type, gpu_tensor.Shape(), cpu_allocator};
-      const auto& data_transfer_mgr = session_state.GetDataTransferMgr();
-      auto status = data_transfer_mgr.CopyTensor(gpu_tensor, cpu_tensor);
-      if (status == common::Status::OK()) {
-        // tensor_metadata.device_type = "GPU";
-        // DumpCpuTensor(dump_options, cpu_tensor, tensor_metadata);
-        DumpTensorToStdOut<T>(cpu_tensor);
-      } else {
-        std::cout << " failed to transfer data to cpu.\n";
-      }
-}
-
 static common::Status ExecuteGraphImpl(const SessionState& session_state,
                                        const FeedsFetchesManager& feeds_fetches_manager,
                                        const std::vector<OrtValue>& feeds, std::vector<OrtValue>& fetches,

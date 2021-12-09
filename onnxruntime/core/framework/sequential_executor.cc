@@ -197,6 +197,7 @@ Status SequentialExecutor::Execute(const SessionState& session_state, const std:
     utils::NodeDumpContext dump_context { session_state.GetGraphExecutionCounter(), program_counter };
 #endif
 
+
   for (const auto& node_exec_plan : exec_plan_vec) {
     if (terminate_flag_) {
       LOGS(logger, WARNING) << "Exiting due to terminate flag being set to true.";
