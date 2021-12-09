@@ -328,29 +328,11 @@ class InferenceSession {
                             const OrtValueCachePtr& cache);
 #endif
 
-  void TurnOnCapture() {
-    for  (const auto& provider : session_state_->GetExecutionProviders()) {
-      if (provider->Type() == kCudaExecutionProvider) {
-        provider->TurnOnCapture();
-      }
-    }
-  }
+  void TurnOnCapture();
 
-  void TurnOffCapture() {
-    for  (const auto& provider : session_state_->GetExecutionProviders()) {
-      if (provider->Type() == kCudaExecutionProvider) {
-        provider->TurnOffCapture();
-      }
-    }
-  }
+  void TurnOffCapture();
 
-  void Replay() {
-    for  (const auto& provider : session_state_->GetExecutionProviders()) {
-      if (provider->Type() == kCudaExecutionProvider) {
-        provider->Replay();
-      }
-    }
-  }
+  void Replay();
 
   /**
     * @return pair.first = OK; FAIL otherwise. pair.second is non-NULL when pair.first = OK.

@@ -184,7 +184,6 @@ CUDAExecutionProvider::CUDAExecutionProvider(const CUDAExecutionProviderInfo& in
   size_t free = 0;
   size_t total = 0;
   CUDA_CALL_THROW(cudaMemGetInfo(&free, &total));
-
 }
 
 CUDAExecutionProvider::~CUDAExecutionProvider() {
