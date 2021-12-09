@@ -13,7 +13,6 @@ CUDAGraph::CUDAGraph(cudaStream_t stream) : capture_stream_(stream) {
 #endif
 }
 
-
 void CUDAGraph::CaptureBegin() {
 #if defined(CUDA_VERSION) && CUDA_VERSION >= 11000
   ORT_ENFORCE(!has_graph_exec_,

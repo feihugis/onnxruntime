@@ -14,7 +14,7 @@ from helper import get_name
 from onnxruntime.capi.onnxruntime_pybind11_state import Fail
 import time
 
-class TestInferenceSession(unittest.TestCase):
+class TestInferenceSessionWithCudaGraph(unittest.TestCase):
   def testOrtValueUpdateInPlace(self):
       x0 = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
       ortvalue_cpu = onnxrt.OrtValue.ortvalue_from_numpy(x0)
