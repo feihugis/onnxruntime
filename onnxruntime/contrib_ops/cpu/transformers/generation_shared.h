@@ -20,28 +20,28 @@ namespace transformers {
 
 template <typename T>
 struct IBeamSearchState {
-  gsl::span<T> next_token_logits;      // shape (batch_size * num_beams, vocab_size)
-  gsl::span<float> next_token_scores;  // shape (batch_size, num_beams * vocab_size)
-  gsl::span<int32_t> next_tokens;      // shape (batch_size, 2 * num_beams)
-  gsl::span<int32_t> next_indices;     // shape (batch_size, 2 * num_beams)
+  gsl::span<T> next_token_logits;            // shape (batch_size * num_beams, vocab_size)
+  gsl::span<float> next_token_scores;        // shape (batch_size, num_beams * vocab_size)
+  gsl::span<int32_t> next_tokens;            // shape (batch_size, 2 * num_beams)
+  gsl::span<int32_t> next_indices;           // shape (batch_size, 2 * num_beams)
   gsl::span<int32_t> selected_next_indices;  // shape (batch_size, num_beams)
-  gsl::span<float> next_scores;        // shape (batch_size, 2 * num_beams)
-  gsl::span<int32_t> next_positions;   // shape (batch_size, num_beams), empty for T5. Next position for position_ids.
-  gsl::span<float> beam_scores;        // shape (batch_size, num_beams)
-  gsl::span<float> scores;             // shape (max_length - sequence_length + 1, batch_size, num_beams * vocab_size)
-  gsl::span<float> remaining_scores;   // portion of scores that is available for appending next token scores.
-  gsl::span<float> topk_buffer;        // temp buffer for topk computation, including:
-                                       // 1st stage needs:
-                                       //   temp score: (batch_size * num_beams * parts_vocab, 2 * num_beams)
-                                       //   temp token: (batch_size * num_beams * parts_vocab, 2 * num_beams)
-                                       // 2nd stage needs:
-                                       //   temp score: (batch_size * num_beams, 2 * num_beams)
-                                       //   temp token: (batch_size * num_beams, 2 * num_beams)
-                                       // in total, it will be:
-                                       // 2 * (batch_size * num_beams * (parts_vocab + 1), 2 * num_beams)
+  gsl::span<float> next_scores;              // shape (batch_size, 2 * num_beams)
+  gsl::span<int32_t> next_positions;         // shape (batch_size, num_beams), empty for T5. Next position for position_ids.
+  gsl::span<float> beam_scores;              // shape (batch_size, num_beams)
+  gsl::span<float> scores;                   // shape (max_length - sequence_length + 1, batch_size, num_beams * vocab_size)
+  gsl::span<float> remaining_scores;         // portion of scores that is available for appending next token scores.
+  gsl::span<float> topk_buffer;              // temp buffer for topk computation, including:
+                                             // 1st stage needs:
+                                             //   temp score: (batch_size * num_beams * parts_vocab, 2 * num_beams)
+                                             //   temp token: (batch_size * num_beams * parts_vocab, 2 * num_beams)
+                                             // 2nd stage needs:
+                                             //   temp score: (batch_size * num_beams, 2 * num_beams)
+                                             //   temp token: (batch_size * num_beams, 2 * num_beams)
+                                             // in total, it will be:
+                                             // 2 * (batch_size * num_beams * (parts_vocab + 1), 2 * num_beams)
 
   // We need 2 buffers - one for past and one for present
-  gsl::span<T> past_present_state_buffer;     // 2 * 12 * 2 * (batch_size * num_beams * num_heads * max_length * head_size)
+  gsl::span<T> past_present_state_buffer;  // 2 * 12 * 2 * (batch_size * num_beams * num_heads * max_length * head_size)
 
   virtual gsl::span<T> GetPastStateBuffer() = 0;
 
