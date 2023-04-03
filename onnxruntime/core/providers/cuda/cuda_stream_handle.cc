@@ -77,8 +77,15 @@ std::unique_ptr<synchronize::Notification> CudaStream::CreateNotification(size_t
 void CudaStream::Flush() {
   // A temp fix: when use cuda graph, we can't flush it before cuda graph capture end
   // only flush when we own the stream (not external, not EP unified stream)
-  if (own_stream_)
-    CUDA_CALL_THROW(cudaStreamSynchronize(static_cast<cudaStream_t>(GetHandle())));
+  if (own_stream_) {
+    // CUDA_CALL_THROW(cudaStreamSynchronize(static_cast<cudaStream_t>(GetHandle())));
+    cudaEvent_t isCopyDone;
+    cudaStream_t cuda_stream = static_cast<cudaStream_t>(GetHandle());
+    CUDA_CALL_THROW(cudaEventCreate(&isCopyDone));
+    CUDA_CALL_THROW(cudaEventRecord(isCopyDone,cuda_stream));
+    CUDA_CALL_THROW(cudaStreamWaitEvent(cuda_stream, isCopyDone));
+    cudaEventDestroy(isCopyDone);
+  }
 }
 
 void CudaStream::EnqueDeferredCPUBuffer(void* cpu_buffer) {
@@ -138,7 +145,13 @@ Status CudaStream::CleanUpOnRunEnd() {
     // it seems be captured in cuda graph and replay, which cause wrong deletion.
     // so in this mode, we manually sync the stream to make sure the copy is done
     // then delete the buffers
-    CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(static_cast<cudaStream_t>(GetHandle())));
+    // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(static_cast<cudaStream_t>(GetHandle())));
+    cudaEvent_t isCopyDone;
+    cudaStream_t cuda_stream = static_cast<cudaStream_t>(GetHandle());
+    CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+    CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone,cuda_stream));
+    CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
+    cudaEventDestroy(isCopyDone);
     for (auto* buffer : deferred_cpu_buffers_) {
       cpu_allocator_->Free(buffer);
     }

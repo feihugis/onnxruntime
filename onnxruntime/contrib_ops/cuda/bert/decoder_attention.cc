@@ -238,7 +238,8 @@ Status DecoderAttention<T>::ComputeInternal(OpKernelContext* context) const {
   IAllocatorUniquePtr<T> gemm_query_buffer_p(nullptr);
   IAllocatorUniquePtr<T> gemm_kv_buffer_p(nullptr);
 
-  CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(stream, isCopyDone));
   bool static_kv_ = *kernel_state_pinned;
   bool use_past_ = *(kernel_state_pinned + 1);
   bool has_layer_state_ = *(kernel_state_pinned + 2);

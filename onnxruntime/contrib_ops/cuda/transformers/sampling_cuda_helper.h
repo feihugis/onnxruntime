@@ -180,7 +180,13 @@ Status Sample(AllocatorPtr& allocator,
                                        cudaMemcpyDeviceToHost,
                                        cuda_stream));
 
-  CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  onnxruntime::contrib::cuda::AutoDestoryCudaEvent new_event;
+  cudaEvent_t& isCopyDone = new_event.Get();
+  CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
 
   return Status::OK();
 }

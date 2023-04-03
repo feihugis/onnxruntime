@@ -175,7 +175,8 @@ Status AddToFeeds(const IExecutionProvider* execution_provider,
   cudaEvent_t& isCopyDone = new_event.Get();
   CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
   CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, stream));
-  CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(stream, isCopyDone));
   // TODO(tianleiwu): allocate a buffer for subgraph inputs so that we can reuse the buffer in each subgraph call.
   const OrtMemoryInfo& location = provider->GetAllocator(OrtMemTypeDefault)->Info();
   for (auto& input : inputs) {
@@ -504,7 +505,15 @@ Status ProcessLogits(const OrtValue& logits,                                 // 
                                        beam_state->next_indices.size_bytes(),
                                        cudaMemcpyDeviceToHost,
                                        cuda_stream));
-  CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+
+  onnxruntime::contrib::cuda::AutoDestoryCudaEvent new_event;
+  cudaEvent_t& isCopyDone = new_event.Get();
+  CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
+
 
   gsl::span<const float> next_scores(cpu_state->topk_scores.data(), beam_state->next_scores.size());
   gsl::span<const int32_t> next_tokens(cpu_state->topk_tokens.data(), beam_state->next_tokens.size());
@@ -705,7 +714,13 @@ Status GreedySearchProcessLogits(
                                        greedy_state->next_tokens.size_bytes(),
                                        cudaMemcpyDeviceToHost,
                                        cuda_stream));
-  CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+   onnxruntime::contrib::cuda::AutoDestoryCudaEvent new_event;
+   cudaEvent_t& isCopyDone = new_event.Get();
+   CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+   CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, cuda_stream));
+   // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+   CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
 
 #ifdef DEBUG_GENERATION
   dumper->Print("greedy_state->next_tokens", greedy_state->next_tokens.data(), batch_size, 1);
@@ -728,7 +743,13 @@ Status DeviceCopy(gsl::span<T> target, gsl::span<const T> source, Stream* ort_st
   } else {
     CUDA_RETURN_IF_ERROR(cudaMemcpyAsync(target.data(), source.data(), source.size_bytes(),
                                          static_cast<cudaMemcpyKind>(copyDirection), cuda_stream));
-    CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+    // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+    onnxruntime::contrib::cuda::AutoDestoryCudaEvent new_event;
+    cudaEvent_t& isCopyDone = new_event.Get();
+    CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+    CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, cuda_stream));
+    // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+    CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
   }
   return Status::OK();
 }
@@ -957,7 +978,13 @@ Status UpdateGptFeeds(
   }
 
   // Make sure data is ready before next subgraph execution.
-  CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(cuda_stream));
+  onnxruntime::contrib::cuda::AutoDestoryCudaEvent new_event;
+  cudaEvent_t& isCopyDone = new_event.Get();
+  CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone, cuda_stream));
+  // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+  CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
 
 #ifdef ENABLE_NVTX_PROFILE
   updateFeedsRange.End();

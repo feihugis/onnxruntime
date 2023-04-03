@@ -394,7 +394,14 @@ Status CUDAExecutionProvider::OnRunEnd(bool sync_stream) {
   }
 
   if (sync_stream) {
-    CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(static_cast<cudaStream_t>(stream_)));
+    // CUDA_RETURN_IF_ERROR(cudaStreamSynchronize(static_cast<cudaStream_t>(stream_)));
+    cudaEvent_t isCopyDone;
+    cudaStream_t cuda_stream = static_cast<cudaStream_t>(stream_);
+    CUDA_RETURN_IF_ERROR(cudaEventCreate(&isCopyDone));
+    CUDA_RETURN_IF_ERROR(cudaEventRecord(isCopyDone,cuda_stream));
+    // CUDA_RETURN_IF_ERROR(cudaEventSynchronize(isCopyDone));
+    CUDA_RETURN_IF_ERROR(cudaStreamWaitEvent(cuda_stream, isCopyDone));
+    cudaEventDestroy(isCopyDone);
   }
 
   // The reason of !IsGraphCaptureEnabled():

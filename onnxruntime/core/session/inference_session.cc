@@ -1431,20 +1431,20 @@ common::Status InferenceSession::Initialize() {
 
             // Return error status as we don't want the session initialization to complete successfully
             // if the user has requested usage of CUDA Graph feature and we cannot honor that.
-            ORT_RETURN_IF_ERROR_SESSIONID_(
-                ORT_MAKE_STATUS(ONNXRUNTIME, FAIL,
-                                "This session cannot use the CUDA Graph feature as requested by the user "
-                                " as the model has control flow nodes which can't be supported by CUDA Graphs."));
+            // ORT_RETURN_IF_ERROR_SESSIONID_(
+            //     ORT_MAKE_STATUS(ONNXRUNTIME, FAIL,
+            //                     "This session cannot use the CUDA Graph feature as requested by the user "
+            //                     " as the model has control flow nodes which can't be supported by CUDA Graphs."));
           } else if (!AreAllNodesInMainGraphAssignedToOneEp(graph, onnxruntime::kCudaExecutionProvider)) {
             LOGS(*session_logger_, ERROR) << "This session cannot use the CUDA Graph feature as requested by the user "
                                           << " as all the graph nodes have not been partitioned to the CUDA EP.";
 
             // Return error status as we don't want the session initialization to complete successfully
             // if the user has requested usage of CUDA Graph feature and we cannot honor that.
-            ORT_RETURN_IF_ERROR_SESSIONID_(
-                ORT_MAKE_STATUS(ONNXRUNTIME, FAIL,
-                                "This session cannot use the CUDA Graph feature as requested by the user "
-                                " as all the graph nodes have not been partitioned to the CUDA EP."));
+            // ORT_RETURN_IF_ERROR_SESSIONID_(
+            //     ORT_MAKE_STATUS(ONNXRUNTIME, FAIL,
+            //                     "This session cannot use the CUDA Graph feature as requested by the user "
+            //                     " as all the graph nodes have not been partitioned to the CUDA EP."));
 
           } else {
             LOGS(*session_logger_, INFO) << "This session will use the CUDA Graph feature as requested by the user.";
